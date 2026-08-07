@@ -62,6 +62,13 @@ def parse_arguments():
     )
     parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"], help="_")
     parser.add_argument(
+    "--input_mode",
+    type=str,
+    default="rgb",
+    choices=["rgb", "grayscale"],
+    help="Whether to evaluate RGB images or grayscale images replicated to 3 channels",
+)
+    parser.add_argument(
         "--recall_values",
         type=int,
         nargs="+",

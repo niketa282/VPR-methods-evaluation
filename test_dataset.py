@@ -49,7 +49,7 @@ def read_images_paths(dataset_folder):
 
 
 class TestDataset(data.Dataset):
-    def __init__(self, database_folder, queries_folder, positive_dist_threshold=25, image_size=None, use_labels=True):
+    def __init__(self, database_folder, queries_folder, positive_dist_threshold=25, image_size=None, use_labels=True, input_mode="rgb"):
         """Dataset with images from database and queries, used for validation and test.
         Parameters
         ----------
@@ -59,8 +59,10 @@ class TestDataset(data.Dataset):
         queries_folder : str, name of folder with the queries.
         positive_dist_threshold : int, distance in meters for a prediction to
             be considered a positive.
+        input_mode : str, whether to evaluate RGB images or grayscale images replicated to 3 channels.
         """
         super().__init__()
+        self.input_mode = input_mode
 
         self.database_paths = read_images_paths(database_folder)
         self.queries_paths = read_images_paths(queries_folder)
@@ -108,7 +110,11 @@ class TestDataset(data.Dataset):
 
     def __getitem__(self, index):
         image_path = self.images_paths[index]
-        pil_img = Image.open(image_path).convert("RGB")
+        pil_img = Image.open(image_path)
+        if self.input_mode == "rgb":
+            pil_img = pil_img.convert("RGB")
+        elif self.input_mode == "grayscale":
+            pil_img = pil_img.convert("L").convert("RGB")
         normalized_img = self.transform(pil_img)
         return normalized_img, index
 

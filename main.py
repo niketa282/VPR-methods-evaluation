@@ -40,6 +40,7 @@ def main(args):
         positive_dist_threshold=args.positive_dist_threshold,
         image_size=args.image_size,
         use_labels=args.use_labels,
+        input_mode=args.input_mode,
     )
     logger.info(f"Testing on {test_ds}")
 
