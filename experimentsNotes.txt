@@ -1,5 +1,7 @@
 EXPERIMENT 1 : How does removing colour information affect the retrieval performance of a pretrained VPR model when the network architecture is kept unchanged?
 ---------------
+RGB vs grayscale copied to 3 channels
+-----------------------------------
 Evaluated a pretrained CosPlace model with a ResNet18 backbone on the St Lucia dataset using two input conditions: 
 the original RGB images and grayscale-converted images replicated across three channels. 
 The grayscale replication preserved the original 3-channel input shape expected by the pretrained network, 
@@ -7,9 +9,9 @@ ensuring that the model architecture, pretrained weights, image dimensions, data
 evaluation procedure remained unchanged. Retrieval performance was measured using Recall@1, Recall@5, Recall@10, and Recall@20.
 
 Input	    R@1	     R@5	    R@10	  R@20
-RGB	       98.8%	 99.6%	    99.9%	  100.0%
+RGB	    98.8%	    99.6%	    99.9%	  100.0%
 
-Grayscale	98.6%	 99.5%	     99.8%	   99.9%
+Grayscale	98.6%	     99.5%	     99.8%	   99.9%
 
 Difference	−0.2 pp	 −0.1 pp	 −0.1 pp	−0.1 pp
 
@@ -17,3 +19,58 @@ On St Lucia, CosPlace–ResNet18 maintained nearly identical VPR performance whe
 RGB images were converted to grayscale, with Recall@1 decreasing from 98.8% to 98.6%. So removing colour
 had a negilible effect.
 
+COMMAND TO RUN EXPERIMENT 1
+python3 main.py \
+    --method=cosplace \
+    --backbone=ResNet18 \
+    --descriptors_dimension=512 \
+    --database_folder=../VPR-datasets-downloader/datasets/st_lucia/images/test/database \
+    --queries_folder=../VPR-datasets-downloader/datasets/st_lucia/images/test/queries \
+    --input_mode=grayscale
+
+
+EXPERIMENT 2 : Can grayscale reduce computational cost while maintaining VPR accuracy?
+---------------
+RGB 3-channel vs native grayscale 1-channel
+-----------------------------------
+adapt the pretrained RGB CosPlace–ResNet18 to accept a native 1-channel grayscale tensor and evaluate its Recall@K.
+
+Condition	Tensor entering model	First ResNet layer	R@1	R@5	  R@10	  R@20	       Purpose
+RGB		       [3,H,W]	        Conv2d(3 → 64)       98.8	99.6	   99.9       100.0           Original baseline                	                                    
+
+Replicated 	    [3,H,W]	              Conv2d(3 → 64)		98.6	 99.5     99.8	   99.9	     Tests whether colour information matters
+grayscale
+
+Native grayscale	[1,H,W]	        Conv2d(1 → 64)	      98.8   99.5      99.7        99.7       Tests whether a true 1-channel input can preserve performance
+
+That means, for CosPlace–ResNet18 on St Lucia, reducing the input from 3 channels 
+to 1 did not hurt top-1 retrieval performance in this adaptation.
+The higher-K recalls drop slightly, but only by 0.1–0.3 percentage points.
+A native one-channel grayscale adaptation of CosPlace–ResNet18 preserved Recall@1 performance on St Lucia, 
+matching the RGB baseline at 98.8%, while showing only minor reductions at higher recall levels.
+
+COMMAND TO RUN EXPERIMENT 2
+python3 main.py \
+    --method=cosplace \
+    --backbone=ResNet18 \
+    --descriptors_dimension=512 \
+    --database_folder=../VPR-datasets-downloader/datasets/st_lucia/images/test/database \
+    --queries_folder=../VPR-datasets-downloader/datasets/st_lucia/images/test/queries \
+    --input_mode=grayscale_1ch
+
+
+
+
+Both Experiments 1 & 2 follow a workflow like
+Pretrained model
+      ↓
+Give it unseen St Lucia images
+      ↓
+Model performs inference
+      ↓
+Produces descriptors
+      ↓
+Nearest-neighbour retrieval
+      ↓
+Measure Recall@K
+So are Inference recognition performance experiments

@@ -32,7 +32,32 @@ def main(args):
     logger.info(f"The outputs are being saved in {log_dir}")
 
     model = vpr_models.get_model(args.method, args.backbone, args.descriptors_dimension)
+    
+    if args.input_mode == "grayscale_1ch":
+    
+        old_conv = model.backbone[0]
+
+        new_conv = torch.nn.Conv2d(
+           in_channels=1, # Creates Conv2d(1 → 64) instead of Conv2d(3 → 64)
+           out_channels=old_conv.out_channels,
+           kernel_size=old_conv.kernel_size,
+           stride=old_conv.stride,
+           padding=old_conv.padding,
+           bias=False
+        )   
+
+        with torch.no_grad():
+            new_conv.weight.copy_(
+                old_conv.weight.mean(dim=1, keepdim=True) # Combines R-filter weights, G-filter weights,B-filter weights into one grayscale filter
+            )
+    
+        model.backbone[0] = new_conv
+    
     model = model.eval().to(args.device)
+    
+    print(model)
+    print("First backbone layer:")
+    print(model.backbone[0])
 
     test_ds = TestDataset(
         args.database_folder,

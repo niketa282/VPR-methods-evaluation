@@ -99,13 +99,26 @@ class TestDataset(data.Dataset):
             self.positives_per_query = knn.radius_neighbors(
                 self.queries_utms, radius=positive_dist_threshold, return_distance=False
             )
-
-        transformations = [
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
+        
+        # For now, 0.449 and 0.226 are approximate scalar reductions of the ImageNet RGB normalization statistics
+        if self.input_mode == "grayscale_1ch":
+            
+           transformations = [
+              transforms.ToTensor(),
+              transforms.Normalize(
+                   mean=[0.449],
+                   std=[0.226]
+                ),       
+            ]
+        else:
+            transformations = [
+                 transforms.ToTensor(),
+                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+           ]
+        #     
         if image_size:
             transformations.append(transforms.Resize(size=image_size, antialias=True))
+        
         self.transform = transforms.Compose(transformations)
 
     def __getitem__(self, index):
@@ -115,6 +128,9 @@ class TestDataset(data.Dataset):
             pil_img = pil_img.convert("RGB")
         elif self.input_mode == "grayscale":
             pil_img = pil_img.convert("L").convert("RGB")
+        elif self.input_mode == "grayscale_1ch":
+            pil_img = pil_img.convert("L")
+            
         normalized_img = self.transform(pil_img)
         return normalized_img, index
 

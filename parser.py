@@ -65,7 +65,7 @@ def parse_arguments():
     "--input_mode",
     type=str,
     default="rgb",
-    choices=["rgb", "grayscale"],
+    choices=["rgb", "grayscale", "grayscale_1ch"],
     help="Whether to evaluate RGB images or grayscale images replicated to 3 channels",
 )
     parser.add_argument(
