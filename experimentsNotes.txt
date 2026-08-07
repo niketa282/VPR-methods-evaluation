@@ -1,0 +1,19 @@
+EXPERIMENT 1 : How does removing colour information affect the retrieval performance of a pretrained VPR model when the network architecture is kept unchanged?
+---------------
+Evaluated a pretrained CosPlace model with a ResNet18 backbone on the St Lucia dataset using two input conditions: 
+the original RGB images and grayscale-converted images replicated across three channels. 
+The grayscale replication preserved the original 3-channel input shape expected by the pretrained network, 
+ensuring that the model architecture, pretrained weights, image dimensions, dataset, and 
+evaluation procedure remained unchanged. Retrieval performance was measured using Recall@1, Recall@5, Recall@10, and Recall@20.
+
+Input	    R@1	     R@5	    R@10	  R@20
+RGB	       98.8%	 99.6%	    99.9%	  100.0%
+
+Grayscale	98.6%	 99.5%	     99.8%	   99.9%
+
+Difference	−0.2 pp	 −0.1 pp	 −0.1 pp	−0.1 pp
+
+On St Lucia, CosPlace–ResNet18 maintained nearly identical VPR performance when 
+RGB images were converted to grayscale, with Recall@1 decreasing from 98.8% to 98.6%. So removing colour
+had a negilible effect.
+
