@@ -98,7 +98,24 @@ descriptors = model(images)
 end_event.record()
 
 Input	   Channels	  First Conv	      R@1	         GPU latency/image
-RGB	      3	   Conv2d(3→64)	      98.8%	            ? ms
+RGB	      3	   Conv2d(3→64)	      98.8%	            7.548 ms (mean) run1    7.272 ms (mean) run2      7.188 ms (mean) run3      7.226 ms (mean) run4   7.306 ms (mean) run5
 
 Native 
-grayscale	1	   Conv2d(1→64)	      98.8%	             ? ms
+grayscale	1	   Conv2d(1→64)	      98.8%	            5.742 ms (mean) run1      5.723 ms (mean) run2    5.862 ms (mean) run3      5.604 ms(mean) run4    5.724 ms (mean) run5
+
+
+
+Input	  Mean across runs	 SD across runs	    Median across runs
+RGB	      7.308 ms	          0.141 ms	         7.272 ms
+
+Native 
+grayscale	5.731 ms	          0.092 ms	          5.724 ms
+
+
+So the average reduction is:
+
+7.308−5.731=1.577 ms
+21.6% reduction in mean GPU descriptor-extraction latency.	
+Across five repeated runs, native 1-channel grayscale reduced mean GPU descriptor-extraction latency from 7.308 ms to 5.731 ms, corresponding to a 21.6% reduction, 
+while preserving Recall@1 at 98.8%
+7.308 ± 0.141 ms for RGB and 5.731 ± 0.092 ms for native grayscale
