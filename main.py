@@ -86,10 +86,52 @@ def main(args):
             test_ds, list(range(test_ds.num_database, test_ds.num_database + test_ds.num_queries))
         )
         queries_dataloader = DataLoader(dataset=queries_subset_ds, num_workers=args.num_workers, batch_size=1)
-        for images, indices in tqdm(queries_dataloader):
-            descriptors = model(images.to(args.device))
+        
+        query_latencies_ms = []
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
+        
+        warmup_iterations = 20
+        
+        for batch_idx, (images, indices) in enumerate(tqdm(queries_dataloader)):
+            # Move image to GPU BEFORE timing
+            images = images.to(args.device)
+            # Warm up the GPU using the first query image only
+            if batch_idx == 0:
+                for _ in range(warmup_iterations):
+                    _ = model(images)
+              # Make sure all warm-up operations have finished
+                torch.cuda.synchronize()
+                
+    # -------------------------------
+    # Start measuring model inference
+    # -------------------------------    
+            start_event.record()
+            descriptors = model(images)
+            end_event.record()
+            
+            # Wait until the GPU has actually finished the forward pass
+            torch.cuda.synchronize()
+            
+            # Calculate elapsed GPU time in milliseconds
+            elapsed_ms = start_event.elapsed_time(end_event)
+            # Save latency for this query
+            query_latencies_ms.append(elapsed_ms)
+            
             descriptors = descriptors.cpu().numpy()
             all_descriptors[indices.numpy(), :] = descriptors
+            
+    # Convert latency measurements to a NumPy array
+    query_latencies_ms = np.array(query_latencies_ms)
+    
+    # Print summary statistics
+    logger.info(
+       f"GPU query inference latency: "
+       f"mean={query_latencies_ms.mean():.3f} ms, "
+       f"median={np.median(query_latencies_ms):.3f} ms, "
+       f"std={query_latencies_ms.std():.3f} ms, "
+       f"p95={np.percentile(query_latencies_ms, 95):.3f} ms"
+    )   
 
     queries_descriptors = all_descriptors[test_ds.num_database :]
     database_descriptors = all_descriptors[: test_ds.num_database]

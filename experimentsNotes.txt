@@ -29,7 +29,7 @@ python3 main.py \
     --input_mode=grayscale
 
 
-EXPERIMENT 2 : Can grayscale reduce computational cost while maintaining VPR accuracy?
+EXPERIMENT 2 : Can a native 1-channel grayscale adaptation maintain VPR retrieval performance
 ---------------
 RGB 3-channel vs native grayscale 1-channel
 -----------------------------------
@@ -74,3 +74,31 @@ Nearest-neighbour retrieval
       ↓
 Measure Recall@K
 So are Inference recognition performance experiments
+
+
+EXPERIMENT 3 :  Does native 1-channel grayscale reduce GPU inference latency? 
+-------------
+The experiment is as follows
+
+query image already on GPU
+        ↓
+START TIMER
+        ↓
+CosPlace–ResNet18 forward pass
+        ↓
+512-D descriptor
+        ↓
+STOP TIMER
+
+this only measures how long the model take to run on the
+ gpu to produce the descriptors because you start and end like this
+
+start_event.record() 
+descriptors = model(images)   
+end_event.record()
+
+Input	   Channels	  First Conv	      R@1	         GPU latency/image
+RGB	      3	   Conv2d(3→64)	      98.8%	            ? ms
+
+Native 
+grayscale	1	   Conv2d(1→64)	      98.8%	             ? ms
