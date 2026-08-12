@@ -122,3 +122,34 @@ while preserving Recall@1 at 98.8%
 
 EXPERIMENT 3 :  Does native 1-channel grayscale reduce peak GPU memory usage during CosPlace–ResNet18 inference?
 -------------
+
+baseline_memory = torch.cuda.memory_allocated() -GPU memory before inference
+├── CosPlace–ResNet18 weights
+├── BatchNorm buffers
+├── current query image
+└── any other live GPU tensors
+
+Baseline memory: GPU tensor memory already occupied before the forward pass.
+Peak memory: highest GPU tensor memory reached during the forward pass
+Extra forward memory: how much the memory increased from baseline to that peak.
+peak memory - basically telling you how high GPU tensor memory climbed during that inference.
+
+torch.cuda.reset_peak_memory_stats - start watching for the highest memory usage
+
+At the end of the forward pass, memory might only be: 104 MB
+but at some point during the computation it reached 128 MB
+That 128 MB is what we mean by peak memory.
+
+Input	    R@1	        Mean latency	      Peak GPU memory	             Extra forward memory          Baseline Memory
+RGB	     98.8%	          7.308 ms	           92.832 MB	                         37.5 MB            55.332 MB
+Native 
+grayscale	98.8%	           5.731 ms	            91.292 MB	                          37.5MB             53.792 MB
+
+The baseline gets slightly smaller with grayscale, but the additional memory required by the forward computation is essentially unchanged.
+That makes sense because after the first convolution both networks become very similar as the  intermediate activation sizes through most of ResNet18 are the same.
+
+That means essentially all of the peak-memory saving is coming from what is already 
+resident before/during the start of inference, 
+rather than from reduced temporary working memory deeper in the network.
+That is consistent with the architecture: grayscale has a smaller input tensor and a slightly smaller first convolution, 
+but the vast majority of ResNet18 remains unchanged.
