@@ -1,0 +1,26 @@
+PHASE 1 — Establish RGB vs grayscale behaviour
+✓ CosPlace-R18 + St Lucia
+✓ Recognition
+✓ Latency
+✓ Memory
+→ Throughput
+→ Energy
+
+PHASE 2 — Dataset generalisation
+CosPlace-R18
+├── St Lucia
+├── Nordland
+└── other datasets
+
+PHASE 3 — Model/backbone generalisation
+├── CosPlace-R18
+├── CosPlace-R50
+├── EigenPlaces
+├── MixVPR
+└── ...
+
+PHASE 4 — RESOURCE / DESIGN ABLATIONS
+├── descriptor dimension
+├── batch size
+├── image resolution
+└── possibly numerical precision
