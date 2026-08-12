@@ -14,6 +14,7 @@ from tqdm import tqdm
 import visualizations
 import vpr_models
 from test_dataset import TestDataset
+from benchmarkingmeasurements import measure_inference_latency, measure_inference_memory
 
 
 def main(args):
@@ -87,12 +88,8 @@ def main(args):
         )
         queries_dataloader = DataLoader(dataset=queries_subset_ds, num_workers=args.num_workers, batch_size=1)
         
-     #   query_latencies_ms = []
-     #   start_event = torch.cuda.Event(enable_timing=True)
-     #   end_event = torch.cuda.Event(enable_timing=True)
+        query_latencies_ms = []
         
-        query_peak_memory_mb = []
-        query_extra_memory_mb = []
         warmup_iterations = 20
         
         for batch_idx, (images, indices) in enumerate(tqdm(queries_dataloader)):
@@ -102,97 +99,46 @@ def main(args):
             if batch_idx == 0:
                 for _ in range(warmup_iterations):
                     _ = model(images)
-              # Make sure all warm-up operations have finished
+                # Make sure all warm-up operations have finished
                 torch.cuda.synchronize()
-                        
-    # --------------------------------------
-    # Memory already allocated before
-    # this forward pass
-    # --------------------------------------
-            torch.cuda.synchronize()
-            baseline_memory = torch.cuda.memory_allocated()
 
+            descriptors, elapsed_ms = measure_inference_latency(model, images)
+            query_latencies_ms.append(elapsed_ms)
 
-    # Reset PyTorch's peak-memory counter
-            torch.cuda.reset_peak_memory_stats()
-    
-     # --------------------------------------
-    # MODEL INFERENCE
-    # --------------------------------------
-            descriptors = model(images)
-    # Make sure inference has finished
-            torch.cuda.synchronize()
-    
-    
-    # --------------------------------------
-    # Measure GPU memory
-    # --------------------------------------
-            peak_memory = torch.cuda.max_memory_allocated()
-        
-            extra_memory = peak_memory - baseline_memory
-
-
-    # Convert bytes → MB
-            peak_memory_mb = peak_memory / (1024 ** 2)
-        
-            extra_memory_mb = extra_memory / (1024 ** 2)
-        
-
-    # Store result for this query
-            query_peak_memory_mb.append(peak_memory_mb)
-        
-            query_extra_memory_mb.append(extra_memory_mb)
-                    
-    # -------------------------------
-    # Start measuring model inference
-    # -------------------------------    
-        #    start_event.record()
-        #    descriptors = model(images)
-        #    end_event.record()
-            
-            # Wait until the GPU has actually finished the forward pass
-        #    torch.cuda.synchronize()
-            
-            # Calculate elapsed GPU time in milliseconds
-         #   elapsed_ms = start_event.elapsed_time(end_event)
-            # Save latency for this query
-         #    query_latencies_ms.append(elapsed_ms)
-         
-    # --------------------------------------
-    # Original evaluation code
-    # --------------------------------------
-            
             descriptors = descriptors.cpu().numpy()
             all_descriptors[indices.numpy(), :] = descriptors
-            
-    # Convert latency measurements to a NumPy array
-   # query_latencies_ms = np.array(query_latencies_ms)
-   
-   # --------------------------------------
-# Summarise GPU memory results
-# --------------------------------------
+
+        # Measure memory in a separate pass so its extra inference does not
+        # affect any of the recorded latency measurements.
+        query_peak_memory_mb = []
+        query_extra_memory_mb = []
+        for images, _ in tqdm(queries_dataloader, desc="Measuring query GPU memory"):
+            images = images.to(args.device)
+            peak_memory_mb, extra_memory_mb = measure_inference_memory(model, images)
+            query_peak_memory_mb.append(peak_memory_mb)
+            query_extra_memory_mb.append(extra_memory_mb)
+
+    query_latencies_ms = np.array(query_latencies_ms)
     query_peak_memory_mb = np.array(query_peak_memory_mb)
-   
     query_extra_memory_mb = np.array(query_extra_memory_mb)
 
-
     logger.info(
-    f"GPU inference memory: "
-    f"mean peak={query_peak_memory_mb.mean():.3f} MB, "
-    f"max peak={query_peak_memory_mb.max():.3f} MB, "
-    f"mean extra forward memory={query_extra_memory_mb.mean():.3f} MB, "
-    f"max extra forward memory={query_extra_memory_mb.max():.3f} MB"
-   )
-    
+        "GPU inference memory: "
+        f"mean peak={query_peak_memory_mb.mean():.3f} MB, "
+        f"max peak={query_peak_memory_mb.max():.3f} MB, "
+        f"mean extra forward memory={query_extra_memory_mb.mean():.3f} MB, "
+        f"max extra forward memory={query_extra_memory_mb.max():.3f} MB"
+    )
+
     # Print summary statistics
-    ''' logger.info(
+    logger.info(
        f"GPU query inference latency: "
        f"mean={query_latencies_ms.mean():.3f} ms, "
        f"median={np.median(query_latencies_ms):.3f} ms, "
        f"std={query_latencies_ms.std():.3f} ms, "
        f"p95={np.percentile(query_latencies_ms, 95):.3f} ms"
     )   
-    '''
+    
     queries_descriptors = all_descriptors[test_ds.num_database :]
     database_descriptors = all_descriptors[: test_ds.num_database]
     

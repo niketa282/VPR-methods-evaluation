@@ -1,10 +1,9 @@
 PHASE 1 — Establish RGB vs grayscale behaviour
-✓ CosPlace-R18 + St Lucia
-✓ Recognition
-✓ Latency
-✓ Memory
-→ Throughput
-→ Energy
+CosPlace-R18 + St Lucia
+Recall
+Latency
+Memory
+Energy
 
 PHASE 2 — Dataset generalisation
 CosPlace-R18
