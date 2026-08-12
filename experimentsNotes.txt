@@ -119,3 +119,6 @@ So the average reduction is:
 Across five repeated runs, native 1-channel grayscale reduced mean GPU descriptor-extraction latency from 7.308 ms to 5.731 ms, corresponding to a 21.6% reduction, 
 while preserving Recall@1 at 98.8%
 7.308 ± 0.141 ms for RGB and 5.731 ± 0.092 ms for native grayscale
+
+EXPERIMENT 3 :  Does native 1-channel grayscale reduce peak GPU memory usage during CosPlace–ResNet18 inference?
+-------------
