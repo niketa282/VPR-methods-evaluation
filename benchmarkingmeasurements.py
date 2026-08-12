@@ -1,4 +1,5 @@
 import torch
+import pynvml
 
 def measure_inference_memory(model, images):
     torch.cuda.synchronize()
@@ -40,3 +41,32 @@ def measure_inference_latency(model, images):
     elapsed_ms = start_event.elapsed_time(end_event)
     
     return descriptors, elapsed_ms
+
+
+def measure_energy_consumption(model, images):
+    energy_iterations = 20
+    pynvml.nvmlInit()
+
+    # Get a reference to a GPU
+    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+    
+    torch.cuda.synchronize()
+     # Read energy BEFORE benchmark
+    energy_before = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+
+        # Run 200 measured forward passes
+    for _ in range(energy_iterations):
+        
+         _ = model(images)
+
+        # Wait until all 200 have actually completed
+    torch.cuda.synchronize()
+
+        # Read energy AFTER benchmark
+    energy_after = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+    energy_used_mJ = energy_after - energy_before
+    energy_used_J = energy_used_mJ / 1000
+    energy_per_image_J = energy_used_J / (
+    energy_iterations * images.size(0)
+  )
+    return energy_per_image_J

@@ -153,3 +153,31 @@ resident before/during the start of inference,
 rather than from reduced temporary working memory deeper in the network.
 That is consistent with the architecture: grayscale has a smaller input tensor and a slightly smaller first convolution, 
 but the vast majority of ResNet18 remains unchanged.
+
+Experiment 4
+-----------
+Does native 1-channel grayscale require less GPU energy per image than RGB for VPR descriptor extraction?
+
+Input mode	Channels	R@1 (%)	Mean GPU latency (ms)	Peak GPU memory (MB)	Extra forward memory (MB)	GPU Energy per image (J)
+RGB		 3	       98.8	              7.308	          92.832                     37.5	                    0.175833 J
+
+Native 
+grayscale	 1	       98.8		         5.731	           91.292                     37.5	               0.167513 J
+
+Change: 
+Gray vs RGB	 —	      0.0 pp	        21.6% lower	      1.7% lower                 0%	                      4.7% lower
+
+The result is actually quite interesting because the different resource metrics don't improve by the same amount:
+
+Recognition: unchanged at R@1.
+Latency: substantial improvement, 21.6% lower.
+Peak memory: only 1.7% lower.
+Extra forward memory: essentially unchanged.
+Energy: modest but measurable improvement, 4.7% lower.
+
+That pattern makes sense architecturally. Going from 3 channels to 1 channel 
+mainly reduces computation and storage at the input and first convolution. 
+After the first convolution, both versions produce the 
+same 64-channel feature representation and then follow almost exactly the same ResNet18 computation.
+
+Better results for GPU Energy per image (J)

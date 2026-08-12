@@ -10,12 +10,13 @@ from loguru import logger
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Subset
 from tqdm import tqdm
+import pynvml
 
 import visualizations
 import vpr_models
 from test_dataset import TestDataset
-from benchmarkingmeasurements import measure_inference_latency, measure_inference_memory
-
+from benchmarkingmeasurements import measure_inference_latency, measure_inference_memory, measure_energy_consumption
+from calculations import rgb_energy_runs, calculate_mean_and_std
 
 def main(args):
     start_time = datetime.now()
@@ -121,6 +122,14 @@ def main(args):
     query_latencies_ms = np.array(query_latencies_ms)
     query_peak_memory_mb = np.array(query_peak_memory_mb)
     query_extra_memory_mb = np.array(query_extra_memory_mb)
+    
+    energy_per_inference = []
+    for images, _ in tqdm(queries_dataloader, desc="Measuring energy consumption"):
+        images = images.to(args.device)
+        energy_j = measure_energy_consumption(model, images)
+        energy_per_inference.append(energy_j)
+
+    energy_per_inference = np.array(energy_per_inference)
 
     logger.info(
         "GPU inference memory: "
@@ -138,6 +147,12 @@ def main(args):
        f"std={query_latencies_ms.std():.3f} ms, "
        f"p95={np.percentile(query_latencies_ms, 95):.3f} ms"
     )   
+    
+    logger.info(
+    "GPU energy consumption: "
+    f"mean={energy_per_inference.mean():.6f} J, "
+    f"std={energy_per_inference.std():.6f} J"
+   )
     
     queries_descriptors = all_descriptors[test_ds.num_database :]
     database_descriptors = all_descriptors[: test_ds.num_database]
@@ -177,8 +192,11 @@ def main(args):
         visualizations.save_preds(
             predictions[:, : args.num_preds_to_save], test_ds, log_dir, args.save_only_wrong_preds, args.use_labels
         )
-
+        
 
 if __name__ == "__main__":
     args = parser.parse_arguments()
     main(args)
+    mean_energy, std_energy = calculate_mean_and_std(rgb_energy_runs)
+    print("Mean:", mean_energy)
+    print("Standard deviation:", std_energy)
