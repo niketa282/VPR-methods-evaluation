@@ -181,3 +181,4 @@ After the first convolution, both versions produce the
 same 64-channel feature representation and then follow almost exactly the same ResNet18 computation.
 
 Better results for GPU Energy per image (J)
+For RGB = 0.1728084 ± 0.002724 J/image
