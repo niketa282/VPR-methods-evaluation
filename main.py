@@ -73,7 +73,12 @@ def main(args):
 
     with torch.inference_mode():
         logger.debug("Extracting database descriptors for evaluation/testing")
-        database_subset_ds = Subset(test_ds, list(range(test_ds.num_database)))
+        num_database = (
+                      args.num_database_images
+                      if args.num_database_images is not None
+                      else test_ds.num_database
+                    )
+        database_subset_ds = Subset(test_ds, list(range(num_database)))
         database_dataloader = DataLoader(
             dataset=database_subset_ds, num_workers=args.num_workers, batch_size=args.batch_size
         )
@@ -84,8 +89,13 @@ def main(args):
             all_descriptors[indices.numpy(), :] = descriptors
 
         logger.debug("Extracting queries descriptors for evaluation/testing using batch size 1")
+        num_queries = (
+                       args.num_query_images
+                       if args.num_query_images is not None
+                       else test_ds.num_queries
+                      )
         queries_subset_ds = Subset(
-            test_ds, list(range(test_ds.num_database, test_ds.num_database + test_ds.num_queries))
+            test_ds, list(range(test_ds.num_database, test_ds.num_database + + num_queries))
         )
         queries_dataloader = DataLoader(dataset=queries_subset_ds, num_workers=args.num_workers, batch_size=1)
         
@@ -123,14 +133,24 @@ def main(args):
     query_peak_memory_mb = np.array(query_peak_memory_mb)
     query_extra_memory_mb = np.array(query_extra_memory_mb)
     
-    energy_per_inference = []
-    for images, _ in tqdm(queries_dataloader, desc="Measuring energy consumption"):
-        images = images.to(args.device)
-        energy_j = measure_energy_consumption(model, images)
-        energy_per_inference.append(energy_j)
-
-    energy_per_inference = np.array(energy_per_inference)
-
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+  # Take one query batch only for energy measurement
+    images, _ = next(iter(queries_dataloader))
+    images = images.to(args.device)
+    
+    energy_j = measure_energy_consumption(
+        model,
+        images,
+        handle
+    )
+    
+    logger.info(
+        f"GPU energy consumption: "
+        f"{energy_j:.6f} J/image"
+    )
+    
+    
     logger.info(
         "GPU inference memory: "
         f"mean peak={query_peak_memory_mb.mean():.3f} MB, "
@@ -146,13 +166,7 @@ def main(args):
        f"median={np.median(query_latencies_ms):.3f} ms, "
        f"std={query_latencies_ms.std():.3f} ms, "
        f"p95={np.percentile(query_latencies_ms, 95):.3f} ms"
-    )   
-    
-    logger.info(
-    "GPU energy consumption: "
-    f"mean={energy_per_inference.mean():.6f} J, "
-    f"std={energy_per_inference.std():.6f} J"
-   )
+    )     
     
     queries_descriptors = all_descriptors[test_ds.num_database :]
     database_descriptors = all_descriptors[: test_ds.num_database]
@@ -197,6 +211,3 @@ def main(args):
 if __name__ == "__main__":
     args = parser.parse_arguments()
     main(args)
-    mean_energy, std_energy = calculate_mean_and_std(rgb_energy_runs)
-    print("Mean:", mean_energy)
-    print("Standard deviation:", std_energy)

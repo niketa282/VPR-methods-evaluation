@@ -102,6 +102,18 @@ def parse_arguments():
         action="store_true",
         help="set to True if you want to save the descriptors extracted by the model",
     )
+    
+    parser.add_argument(
+        "--num_database_images",
+        type=int,
+        default=None
+    )
+    
+    parser.add_argument(
+        "--num_query_images",
+        type=int,
+        default=None
+    )
     args = parser.parse_args()
 
     args.use_labels = not args.no_labels

@@ -1,3 +1,8 @@
+I am evaluating the inference-time computational efficiency of RGB and 
+native 1-channel grayscale VPR, measuring GPU latency, GPU memory usage, 
+and GPU energy consumption alongside retrieval performance.
+
+
 EXPERIMENT 1 : How does removing colour information affect the retrieval performance of a pretrained VPR model when the network architecture is kept unchanged?
 ---------------
 RGB vs grayscale copied to 3 channels
@@ -182,3 +187,96 @@ same 64-channel feature representation and then follow almost exactly the same R
 
 Better results for GPU Energy per image (J)
 For RGB = 0.1728084 ± 0.002724 J/image
+==========================================================================================================================================================
+
+
+PHASE 2 — DATASET GENERALISATION
+Model: CosPlace-ResNet18
+
+For debugging purpose 500 query-database is good but for Recall whole dataset needs to be considered
+
+Dataset       Input Mode         Channels   R@1 (%)   Mean GPU Latency (ms)   Peak GPU Memory (MB)   Extra Forward Memory (MB)   GPU Energy / Image (J)
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+St Lucia      RGB                3          98.8      7.308                   92.832                 37.5                        0.175833
+St Lucia      Native grayscale   1          98.8      5.731                   91.292                 37.5                        0.167513
+St Lucia      Gray vs RGB        -          0.0 pp    21.6% lower             1.7% lower             0% change                   4.7% lower
+
+Nordland      RGB                3          59.1         7.043                  82.576                 28.125                       0.171305 J/image Run1
+Nordland      Native grayscale   1          58.0         4.980                  80.794                  28.125                      0.109865 J/image Run1 
+Nordland      Gray vs RGB        -          1.1 pp    29.3% lower             2.1% lower             0% change                          35.9% lower
+
+Accuracy: almost preserved
+Latency: clearly improved
+Peak memory: slightly improved
+Forward memory: essentially unchanged
+Energy: promising, but needs repeated measurements before drawing conclusions
+
+I would trust the latency and memory pattern already. I would rerun energy at least 5 times before making any claim about the size of the energy benefit.
+
+=========================================================================================================================================================
+
+PHASE 3 — Model/backbone generalisation
+
+PHASE 3 — MODEL/BACKBONE GENERALISATION
+Memory + Latency Experiments
+
+does the efficiency benefit of grayscale persist across different VPR architectures/backbones, rather than only occurring with CosPlace-ResNet18?
+
+===========================================================================================================
+Model / Backbone     Input        Run 1       Run 2       Run 3       Run 4       Run 5       Mean
+===========================================================================================================
+
+COSPLACE — RESNET18
+-----------------------------------------------------------------------------------------------------------
+Latency (ms)         RGB
+Latency (ms)         Grayscale
+
+Memory (MB)          RGB
+Memory (MB)          Grayscale
+
+
+COSPLACE — RESNET50
+-----------------------------------------------------------------------------------------------------------
+Latency (ms)         RGB
+Latency (ms)         Grayscale
+
+Memory (MB)          RGB
+Memory (MB)          Grayscale
+
+
+EIGENPLACES
+-----------------------------------------------------------------------------------------------------------
+Latency (ms)         RGB
+Latency (ms)         Grayscale
+
+Memory (MB)          RGB
+Memory (MB)          Grayscale
+
+
+MIXVPR
+-----------------------------------------------------------------------------------------------------------
+Latency (ms)         RGB
+Latency (ms)         Grayscale
+
+Memory (MB)          RGB
+Memory (MB)          Grayscale
+
+
+===========================================================================================================
+SUMMARY
+===========================================================================================================
+
+Model / Backbone     Metric          RGB Mean       Grayscale Mean      Reduction (%)
+-----------------------------------------------------------------------------------------------------------
+CosPlace-R18         Latency (ms)
+CosPlace-R18         Memory (MB)
+
+CosPlace-R50         Latency (ms)
+CosPlace-R50         Memory (MB)
+
+EigenPlaces          Latency (ms)
+EigenPlaces          Memory (MB)
+
+MixVPR               Latency (ms)
+MixVPR               Memory (MB)
+===========================================================================================================

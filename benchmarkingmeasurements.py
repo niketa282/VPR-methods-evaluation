@@ -43,30 +43,35 @@ def measure_inference_latency(model, images):
     return descriptors, elapsed_ms
 
 
-def measure_energy_consumption(model, images):
-    energy_iterations = 20
-    pynvml.nvmlInit()
+def measure_energy_consumption(model, images, handle):
+    energy_iterations = 200
+    warmup_iterations = 20
 
-    # Get a reference to a GPU
-    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    
-    torch.cuda.synchronize()
-     # Read energy BEFORE benchmark
-    energy_before = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+    with torch.inference_mode():
 
-        # Run 200 measured forward passes
-    for _ in range(energy_iterations):
-        
-         _ = model(images)
+        # Warm-up
+        for _ in range(warmup_iterations):
+            _ = model(images)
 
-        # Wait until all 200 have actually completed
-    torch.cuda.synchronize()
+        torch.cuda.synchronize()
 
-        # Read energy AFTER benchmark
-    energy_after = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+        # Start energy measurement
+        energy_before = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+
+        # Measured inference
+        for _ in range(energy_iterations):
+            _ = model(images)
+
+        torch.cuda.synchronize()
+
+        # End energy measurement
+        energy_after = pynvml.nvmlDeviceGetTotalEnergyConsumption(handle)
+
     energy_used_mJ = energy_after - energy_before
     energy_used_J = energy_used_mJ / 1000
-    energy_per_image_J = energy_used_J / (
-    energy_iterations * images.size(0)
-  )
+
+    num_images_processed = energy_iterations * images.size(0)
+
+    energy_per_image_J = energy_used_J / num_images_processed
+
     return energy_per_image_J
