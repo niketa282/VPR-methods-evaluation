@@ -159,7 +159,7 @@ def parse_arguments():
         if args.backbone not in [None, "ResNet50"]:
             raise ValueError("When using MixVPR the backbone must be None or ResNet50")
         if args.descriptors_dimension not in [None, 128, 512, 4096]:
-            raise ValueError( "When using MixVPR the descriptors_dimension must be one of [None, 128, 512, 4096]")
+            raise ValueError("When using MixVPR the descriptors_dimension must be one of [None, 128, 512, 4096]")
 
     elif args.method == "eigenplaces":
         if args.backbone is None:
