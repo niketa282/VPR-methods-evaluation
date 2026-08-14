@@ -221,62 +221,33 @@ PHASE 3 — MODEL/BACKBONE GENERALISATION
 Memory + Latency Experiments
 
 does the efficiency benefit of grayscale persist across different VPR architectures/backbones, rather than only occurring with CosPlace-ResNet18?
-
+All experiments done with St Lucia
 ===========================================================================================================
 Model / Backbone     Input        Run 1       Run 2       Run 3       Run 4       Run 5       Mean
 ===========================================================================================================
 
 COSPLACE — RESNET18
 -----------------------------------------------------------------------------------------------------------
-Latency (ms)         RGB
-Latency (ms)         Grayscale
+Latency (ms)         RGB          8.232 ms   8.620 ms   8.589 ms    8.879 ms   8.000 ms       8.464 ms
+Latency (ms)         Grayscale    5.872 ms   5.812 ms   5.842 ms    5.727 ms   6.035 ms       5.858 ms
 
-Memory (MB)          RGB
-Memory (MB)          Grayscale
+Memory (MB)          RGB          92.830 MB   92.830 MB  92.830 MB  92.830 MB   92.830 MB     92.830 MB
+Memory (MB)          Grayscale    91.290 MB   91.290 MB  91.290 MB  91.290 MB   91.290 MB     91.290 MB
 
 
 COSPLACE — RESNET50
 -----------------------------------------------------------------------------------------------------------
-Latency (ms)         RGB
-Latency (ms)         Grayscale
+Latency (ms)         RGB          12.577 ms
+Latency (ms)         Grayscale    9.393 ms
 
-Memory (MB)          RGB
-Memory (MB)          Grayscale
-
-
-EIGENPLACES
------------------------------------------------------------------------------------------------------------
-Latency (ms)         RGB
-Latency (ms)         Grayscale
-
-Memory (MB)          RGB
-Memory (MB)          Grayscale
+Memory (MB)          RGB          166.492 MB
+Memory (MB)          Grayscale    164.125 MB
 
 
 MIXVPR
 -----------------------------------------------------------------------------------------------------------
-Latency (ms)         RGB
-Latency (ms)         Grayscale
+Latency (ms)         RGB          12.516 ms 
+Latency (ms)         Grayscale    9.662 ms
 
-Memory (MB)          RGB
-Memory (MB)          Grayscale
-
-
-===========================================================================================================
-SUMMARY
-===========================================================================================================
-
-Model / Backbone     Metric          RGB Mean       Grayscale Mean      Reduction (%)
------------------------------------------------------------------------------------------------------------
-CosPlace-R18         Latency (ms)
-CosPlace-R18         Memory (MB)
-
-CosPlace-R50         Latency (ms)
-CosPlace-R50         Memory (MB)
-
-EigenPlaces          Latency (ms)
-EigenPlaces          Memory (MB)
-
-MixVPR               Latency (ms)
-MixVPR               Memory (MB)
-===========================================================================================================
+Memory (MB)          RGB         72.763 MB
+Memory (MB)          Grayscale   68.630 MB

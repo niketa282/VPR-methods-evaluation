@@ -37,7 +37,20 @@ def main(args):
     
     if args.input_mode == "grayscale_1ch":
     
-        old_conv = model.backbone[0]
+        for name, module in model.backbone.named_modules():
+            if isinstance(module, torch.nn.Conv2d):
+                print("First Conv2d:", name, module)
+                break
+            
+        # old_conv = model.backbone[0]
+        if hasattr(model.backbone, "model") and hasattr(model.backbone.model, "conv1"):
+            print("ENTERING IF")
+            old_conv = model.backbone.model.conv1
+        else:
+            print("ENTERING ELSE")
+            old_conv = model.backbone[0]
+            
+
 
         new_conv = torch.nn.Conv2d(
            in_channels=1, # Creates Conv2d(1 → 64) instead of Conv2d(3 → 64)
@@ -53,14 +66,16 @@ def main(args):
                 old_conv.weight.mean(dim=1, keepdim=True) # Combines R-filter weights, G-filter weights,B-filter weights into one grayscale filter
             )
     
-        model.backbone[0] = new_conv
+       # model.backbone[0] = new_conv
+            if hasattr(model.backbone, "model") and hasattr(model.backbone.model, "conv1"):
+                print("ENTERING IF")
+                model.backbone.model.conv1 = new_conv
+            else:
+                print("ENTERING ELSE")
+                model.backbone[0] = new_conv
     
     model = model.eval().to(args.device)
     
-    print(model)
-    print("First backbone layer:")
-    print(model.backbone[0])
-
     test_ds = TestDataset(
         args.database_folder,
         args.queries_folder,
